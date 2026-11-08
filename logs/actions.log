@@ -1,7 +1,0 @@
-INFO 2026-11-08T16:06:43 UPDATE client=CoinGeckoClient result=OK rates=3
-INFO 2026-11-08T16:06:43 UPDATE client=ExchangeRateApiClient result=ERROR error='Ошибка при обращении к внешнему API: не задан ключ EXCHANGERATE_API_KEY'
-INFO 2026-11-08T16:06:43 UPDATE result=OK total=3 updated_at=2026-11-08T13:06:42.931372Z
-INFO 2026-11-08T16:06:43 BUY user='alice' currency='BTC' amount=0.001 rate=75,924.00 base='USD' result=OK balance: 0.0000→0.0010
-INFO 2026-11-08T16:07:30 UPDATE client=CoinGecko result=OK rates=3
-INFO 2026-11-08T16:07:30 UPDATE client=ExchangeRate-API result=ERROR error='Ошибка при обращении к внешнему API: не задан ключ EXCHANGERATE_API_KEY'
-INFO 2026-11-08T16:07:30 UPDATE result=OK total=3 updated_at=2026-11-08T13:07:30.295911Z

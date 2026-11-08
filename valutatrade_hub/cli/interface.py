@@ -62,7 +62,10 @@ def run():
     welcome()
     current_user = None
     while True:
-        user_input = input("Введите команду: ").strip()
+        try:
+            user_input = input("Введите команду: ").strip()
+        except EOFError:
+            break
         if not user_input:
             continue
 

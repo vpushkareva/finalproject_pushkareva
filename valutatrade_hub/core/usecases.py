@@ -115,13 +115,15 @@ def get_rate(currency_from, currency_to):
     return rate, snapshot.get("last_refresh", datetime.now(timezone.utc).isoformat())
 
 
-def rates_to_base(base_currency):
-    """Курсы всех валют к базовой, для оценки портфеля."""
+def rates_to_base(base_currency, codes=None):
+    """Курсы нужных валют к базовой, для оценки портфеля."""
     try:
         get_currency(base_currency)
     except CurrencyNotFoundError:
         raise ValueError(f"Неизвестная базовая валюта '{base_currency}'")
-    return {code: get_rate(code, base_currency)[0] for code in CURRENCIES}
+    if codes is None:
+        codes = CURRENCIES
+    return {code: get_rate(code, base_currency)[0] for code in codes}
 
 
 @log_action("BUY", verbose=True)

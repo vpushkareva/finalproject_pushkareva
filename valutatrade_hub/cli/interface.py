@@ -93,7 +93,7 @@ def run():
                         continue
                     base = flags.get("--base", "USD").upper()
                     portfolio = usecases.load_portfolio(current_user.user_id)
-                    rates = usecases.rates_to_base(base)
+                    rates = usecases.rates_to_base(base, portfolio.wallets.keys())
                     print(f"Портфель пользователя '{current_user.username}' (база: {base}):")  # noqa: E501
                     for code, wallet in portfolio.wallets.items():
                         cost = wallet.balance * rates[code]

@@ -47,8 +47,10 @@ CURRENCIES = {
     "USD": FiatCurrency("USD", "US Dollar", "United States"),
     "EUR": FiatCurrency("EUR", "Euro", "Eurozone"),
     "RUB": FiatCurrency("RUB", "Russian Ruble", "Russia"),
+    "GBP": FiatCurrency("GBP", "British Pound", "United Kingdom"),
     "BTC": CryptoCurrency("BTC", "Bitcoin", "SHA-256", 1.12e12),
     "ETH": CryptoCurrency("ETH", "Ethereum", "Ethash", 4.1e11),
+    "SOL": CryptoCurrency("SOL", "Solana", "Proof of Stake", 7.2e10),
 }
 
 

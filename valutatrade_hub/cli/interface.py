@@ -1,4 +1,4 @@
-import shlex
+import shlex  # noqa: I001
 from datetime import datetime
 
 from valutatrade_hub.core import usecases, utils
@@ -8,6 +8,8 @@ from valutatrade_hub.core.exceptions import (
     CurrencyNotFoundError,
     InsufficientFundsError,
 )
+from valutatrade_hub.parser_service.api_clients import CoinGeckoClient, ExchangeRateApiClient  # noqa: E501
+from valutatrade_hub.parser_service.updater import RatesUpdater
 
 
 def parse_flags(args):
@@ -41,6 +43,8 @@ def welcome():
     print("<command> buy --currency <str> --amount <float> - купить валюту")
     print("<command> sell --currency <str> --amount <float> - продать валюту")
     print("<command> get-rate --from <str> --to <str> - курс валюты")
+    print("<command> update-rates [--source <str>] - обновить курсы из API")
+    print("<command> show-rates [--currency <str>] [--top <int>] [--base <str>] - курсы из кеша")  # noqa: E501
     print("<command> help - справка")
     print("<command> exit - выход")
 
@@ -126,6 +130,53 @@ def run():
                     print(f"Курс {currency_from}→{currency_to}: {rate:.8f} (обновлено: {updated})")  # noqa: E501
                     back_rate = usecases.get_rate(currency_to, currency_from)[0]
                     print(f"Обратный курс {currency_to}→{currency_from}: {back_rate:,.2f}")  # noqa: E501
+                case "update-rates":
+                    source = flags.get("--source", "")
+                    clients = []
+                    if source in ("", "coingecko"):
+                        clients.append(CoinGeckoClient())
+                    if source in ("", "exchangerate"):
+                        clients.append(ExchangeRateApiClient())
+                    print("INFO: Starting rates update...")
+                    try:
+                        total, refreshed = RatesUpdater(clients).run_update()
+                        print(f"Update successful. Total rates updated: {total}. "
+                              f"Last refresh: {refreshed}")
+                    except ApiRequestError as e:
+                        print(f"ERROR: Failed to fetch rates: {e}")
+                        print("Update completed with errors. Check logs/actions.log for details.")  # noqa: E501
+                case "show-rates":
+                    snapshot = usecases.db.load(usecases.RATES_FILE, {})
+                    pairs = snapshot.get("pairs", {})
+                    if not pairs:
+                        print("Локальный кеш курсов пуст. Выполните 'update-rates', "
+                              "чтобы загрузить данные.")
+                        continue
+                    base = flags.get("--base", "USD").upper()
+                    base_rate = 1.0 if base == "USD" else pairs.get(f"{base}_USD", {}).get("rate")  # noqa: E501
+                    if base_rate is None:
+                        print(f"Курс для '{base}' не найден в кеше.")
+                        continue
+                    currency = flags.get("--currency", "").upper()
+                    top = flags.get("--top", "")
+
+                    items = sorted(
+                        ((pair.split("_")[0], entry["rate"] / base_rate)
+                         for pair, entry in pairs.items()),
+                        key=lambda item: item[1], reverse=True,
+                    )
+                    if currency:
+                        items = [item for item in items if item[0] == currency]
+                        if not items:
+                            print(f"Курс для '{currency}' не найден в кеше.")
+                            continue
+                    if top:
+                        items = items[:int(top)]
+
+                    print(f"Rates from cache (updated at {snapshot.get('last_refresh')}):")  # noqa: E501
+                    for code, rate in items:
+                        rate_str = f"{rate:,.2f}" if rate >= 1 else f"{rate:.5f}"
+                        print(f"- {code}_{base}: {rate_str}")
                 case "help":
                     welcome()
                 case "exit":

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone  # noqa: I001
 
 from valutatrade_hub.core.currencies import CURRENCIES, get_currency
 from valutatrade_hub.core.exceptions import ApiRequestError, CurrencyNotFoundError
@@ -7,18 +7,12 @@ from valutatrade_hub.core.utils import convert
 from valutatrade_hub.decorators import log_action
 from valutatrade_hub.infra.database import DatabaseManager
 from valutatrade_hub.infra.settings import SettingsLoader
+from valutatrade_hub.parser_service.api_clients import CoinGeckoClient, ExchangeRateApiClient  # noqa: E501
+from valutatrade_hub.parser_service.updater import RatesUpdater
 
 USERS_FILE = "users.json"
 PORTFOLIOS_FILE = "portfolios.json"
 RATES_FILE = "rates.json"
-
-STUB_RATES = {
-    "USD": 1.0,
-    "EUR": 1.0786,
-    "BTC": 59337.21,
-    "ETH": 3720.00,
-    "RUB": 0.01016,
-}
 
 db = DatabaseManager()
 settings = SettingsLoader()
@@ -81,33 +75,38 @@ def save_portfolio(portfolio):
 
 
 def fetch_rate_from_api(currency_from, currency_to):
-    """Заглушка Parser Service: курс через USD по фиксированным значениям."""
-    if currency_from not in STUB_RATES or currency_to not in STUB_RATES:
-        raise ApiRequestError(f"нет данных по паре {currency_from}_{currency_to}")
-    return STUB_RATES[currency_from] / STUB_RATES[currency_to]
+    """Обновляет курсы через Parser Service и даёт нужную пару."""
+    updater = RatesUpdater([CoinGeckoClient(), ExchangeRateApiClient()])
+    try:
+        updater.run_update()
+    except ApiRequestError:
+        pass
+
+    snapshot = db.load(RATES_FILE, {})
+    pairs = snapshot.get("pairs", {})
+    key = f"{currency_from}_{currency_to}"
+    if key not in pairs:
+        raise ApiRequestError(f"нет данных по паре {key}")
+    return pairs[key]["rate"]
 
 
 def get_rate(currency_from, currency_to):
-    """Даёт курс пары: свежий из кеша или из слоя получения курсов."""
+    """Даёт курс пары: свежий из кеша или после обновления парсером."""
     get_currency(currency_from)
     get_currency(currency_to)
 
-    rates = db.load(RATES_FILE, {})
     key = f"{currency_from}_{currency_to}"
     ttl = timedelta(seconds=settings.get("rates_ttl_seconds", 300))
-    entry = rates.get(key)
+
+    snapshot = db.load(RATES_FILE, {})
+    entry = snapshot.get("pairs", {}).get(key)
     if entry:
         updated = datetime.fromisoformat(entry["updated_at"])
-        if datetime.now() - updated < ttl:
+        if datetime.now(timezone.utc) - updated < ttl:
             return entry["rate"], entry["updated_at"]
 
     rate = fetch_rate_from_api(currency_from, currency_to)
-    updated_at = datetime.now().isoformat()
-    rates[key] = {"rate": rate, "updated_at": updated_at}
-    rates["source"] = "ParserService"
-    rates["last_refresh"] = updated_at
-    db.save(RATES_FILE, rates)
-    return rate, updated_at
+    return rate, snapshot.get("last_refresh", datetime.now(timezone.utc).isoformat())
 
 
 def rates_to_base(base_currency):

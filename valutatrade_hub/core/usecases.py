@@ -75,7 +75,7 @@ def save_portfolio(portfolio):
 
 
 def fetch_rate_from_api(currency_from, currency_to):
-    """Обновляет курсы через Parser Service и даёт нужную пару."""
+    """Обновляет курсы через Parser Service и считает пару через USD."""
     updater = RatesUpdater([CoinGeckoClient(), ExchangeRateApiClient()])
     try:
         updater.run_update()
@@ -84,10 +84,16 @@ def fetch_rate_from_api(currency_from, currency_to):
 
     snapshot = db.load(RATES_FILE, {})
     pairs = snapshot.get("pairs", {})
-    key = f"{currency_from}_{currency_to}"
-    if key not in pairs:
-        raise ApiRequestError(f"нет данных по паре {key}")
-    return pairs[key]["rate"]
+
+    def to_usd(code):
+        if code == "USD":
+            return 1.0
+        entry = pairs.get(f"{code}_USD")
+        if entry is None:
+            raise ApiRequestError(f"нет данных по паре {code}_USD")
+        return entry["rate"]
+
+    return to_usd(currency_from) / to_usd(currency_to)
 
 
 def get_rate(currency_from, currency_to):

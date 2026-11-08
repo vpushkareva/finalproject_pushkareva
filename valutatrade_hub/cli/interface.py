@@ -130,7 +130,8 @@ def run():
                     currency_to = flags.get("--to", "").upper()
                     rate, updated_at = usecases.get_rate(currency_from, currency_to)
                     updated = datetime.fromisoformat(updated_at).strftime("%Y-%m-%d %H:%M:%S")  # noqa: E501
-                    print(f"Курс {currency_from}→{currency_to}: {rate:.8f} (обновлено: {updated})")  # noqa: E501
+                    rate_str = f"{rate:,.2f}" if rate >= 1 else f"{rate:.8f}"
+                    print(f"Курс {currency_from}→{currency_to}: {rate_str} (обновлено: {updated})")  # noqa: E501
                     back_rate = usecases.get_rate(currency_to, currency_from)[0]
                     print(f"Обратный курс {currency_to}→{currency_from}: {back_rate:,.2f}")  # noqa: E501
                 case "update-rates":

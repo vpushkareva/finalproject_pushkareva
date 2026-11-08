@@ -1,7 +1,13 @@
 import shlex
 from datetime import datetime
 
-from valutatrade_hub.core import usecases
+from valutatrade_hub.core import usecases, utils
+from valutatrade_hub.core.currencies import CURRENCIES
+from valutatrade_hub.core.exceptions import (
+    ApiRequestError,
+    CurrencyNotFoundError,
+    InsufficientFundsError,
+)
 
 
 def parse_flags(args):
@@ -92,9 +98,7 @@ def run():
                     if need_login(current_user):
                         continue
                     currency = flags.get("--currency", "").upper()
-                    amount = float(flags.get("--amount", "0"))
-                    if amount <= 0:
-                        raise ValueError("'amount' должен быть положительным числом")
+                    amount = utils.parse_amount(flags.get("--amount", "0"))
                     result = usecases.buy(current_user, currency, amount)
                     print(f"Покупка выполнена: {fmt_amount(amount)} {currency} "
                           f"по курсу {result['rate']:,.2f} USD/{currency}")
@@ -106,9 +110,7 @@ def run():
                     if need_login(current_user):
                         continue
                     currency = flags.get("--currency", "").upper()
-                    amount = float(flags.get("--amount", "0"))
-                    if amount <= 0:
-                        raise ValueError("'amount' должен быть положительным числом")
+                    amount = utils.parse_amount(flags.get("--amount", "0"))
                     result = usecases.sell(current_user, currency, amount)
                     print(f"Продажа выполнена: {fmt_amount(amount)} {currency} "
                           f"по курсу {result['rate']:,.2f} USD/{currency}")
@@ -130,5 +132,13 @@ def run():
                     break
                 case _:
                     print(f"Функции {cmd} нет. Попробуйте снова.")
+        except InsufficientFundsError as e:
+            print(e)
+        except CurrencyNotFoundError as e:
+            print(e)
+            print(f"Поддерживаемые коды: {', '.join(CURRENCIES)}")
+        except ApiRequestError as e:
+            print(e)
+            print("Повторите попытку позже.")
         except ValueError as e:
             print(e)

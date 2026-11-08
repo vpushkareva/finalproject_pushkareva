@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 from valutatrade_hub.cli.interface import run
+from valutatrade_hub.logging_config import setup_logging
 
 
 def main():
-    """Точка входа: запускает консольный интерфейс кошелька."""
+    """Точка входа: настраивает логи и запускает консольный интерфейс."""
+    setup_logging()
     run()
 
 

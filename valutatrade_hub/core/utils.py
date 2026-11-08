@@ -18,3 +18,16 @@ def save_data(filename, data):
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(f"{DATA_DIR}/{filename}", "w") as f:
         json.dump(data, f, indent=2)
+
+
+def parse_amount(value):
+    """Даёт float из строки, мусор и неположительные числа — ошибка."""
+    amount = float(value)
+    if amount <= 0:
+        raise ValueError("'amount' должен быть положительным числом")
+    return amount
+
+
+def convert(amount, rate):
+    """Переводит сумму по курсу."""
+    return amount * rate

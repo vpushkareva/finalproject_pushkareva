@@ -82,4 +82,4 @@ Core-сервис читает курсы из локального кеша `da
 
 ## Демонстрация
 
-[![asciicast](https://asciinema.org/a/ДЕМО_ID.svg)](https://asciinema.org/a/ДЕМО_ID)
+[![asciicast](https://asciinema.org/a/DYHtfCmrhRMQnrcv.svg)](https://asciinema.org/a/DYHtfCmrhRMQnrcv)

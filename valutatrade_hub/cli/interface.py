@@ -97,10 +97,10 @@ def run():
                     print(f"Портфель пользователя '{current_user.username}' (база: {base}):")  # noqa: E501
                     for code, wallet in portfolio.wallets.items():
                         cost = wallet.balance * rates[code]
-                        print(f"- {code}: {fmt_amount(wallet.balance)}  → {cost:,.2f} {base}")  # noqa: E501
+                        print(f"- {code}: {fmt_amount(wallet.balance)}  → {fmt_amount(cost)} {base}")  # noqa: E501
                     total = portfolio.get_total_value(rates, base)
                     print("---------------------------------")
-                    print(f"ИТОГО: {total:,.2f} {base}")
+                    print(f"ИТОГО: {fmt_amount(total)} {base}")
                 case "buy":
                     if need_login(current_user):
                         continue
